@@ -4,6 +4,8 @@ Turn natural-language arguments into a structured **knowledge graph** and render
 
 > **Live data flow:** Text argument → GitHub Action (OpenAI) → `data/kg.json` → Static viewer (`index.html`).
 
+<img width="1389" height="923" alt="image" src="https://github.com/user-attachments/assets/f66ee495-1ae1-498a-b7c0-fbc62ec8905f" />
+
 ---
 
 ## Features
