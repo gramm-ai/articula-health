@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Articula Lab</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <script src="https://cdn.jsdelivr.net/npm/cytoscape@3.28.1/dist/cytoscape.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/cytoscape-cose-bilkent@4.1.0/cytoscape-cose-bilkent.min.js"></script>
+  <style>
+    :root{--bg:#0b1020;--panel:#121735;--muted:#a0aec0;--text:#eef2ff;--accent:#8b5cf6;}
+    *{box-sizing:border-box}
+    body{font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;margin:0;line-height:1.4;background:var(--bg);color:var(--text);overflow-x:hidden}
+    header{display:flex;gap:12px;align-items:center;padding:10px 20px;background:linear-gradient(90deg,#0f172a,#1e293b)}
+    .pill{font-size:12px;padding:4px 10px;border:1px solid #334155;border-radius:999px;color:#cbd5e1}
+    main{display:grid;grid-template-columns:420px 1fr 380px;gap:14px;padding:14px;max-width:100vw;overflow-x:hidden;position:relative}
+    aside{background:var(--panel);border:1px solid #1f2a4a;border-radius:14px;padding:6px 14px 14px 14px;height:calc(100vh - 64px);overflow-y:auto;overflow-x:hidden;scrollbar-width:none;-ms-overflow-style:none}
+    .center{display:flex;flex-direction:column;height:calc(100vh - 64px);position:relative}
+    #graphPane{flex:1;min-height:160px;position:relative}
+    #cy{height:100%;border:1px solid #1f2a4a;border-radius:14px;background:#0a0f24}
+    #insightsPane{background:var(--panel);border:1px solid #1f2a4a;border-radius:14px;padding:14px;overflow-y:auto;position:absolute;top:14px;right:14px;bottom:14px;width:380px;z-index:50;scrollbar-width:none;-ms-overflow-style:none}
+    #analysisProgress{position:absolute;top:50%;left:50%;transform:translate(-50%, -50%);background:rgba(11,16,32,0.95);border:2px solid #334155;border-radius:12px;padding:24px;text-align:center;display:none;z-index:1000;min-width:300px}
+    .progress-stage{margin:8px 0;padding:8px;border-radius:8px;background:rgba(31,37,71,0.5)}
+    .progress-stage.active{background:rgba(139,92,246,0.2);border:1px solid #8b5cf6}
+    .resizer{width:6px;background:#334155;cursor:col-resize;position:absolute;left:-3px;top:0;bottom:0;transition:background 0.2s;z-index:10}
+    .resizer:hover{background:#475569;width:8px}
+    aside::-webkit-scrollbar,#insightsPane::-webkit-scrollbar{display:none}
+    .resizer.left{left:-3px}
+    .resizer.left:hover{left:-4px}
+    .resizer.right{left:auto;right:-3px}
+    .resizer.right:hover{right:-4px}
+    h2{margin:8px 0 6px 0;font-size:16px}
+    h3{margin:12px 0 6px 0;font-size:14px;color:#cbd5e1}
+    input[type="text"], select{width:100%;padding:8px 10px;border-radius:10px;border:1px solid #334155;background:#0b1229;color:#e2e8f0}
+    textarea{width:100%;min-height:360px;padding:10px;border-radius:10px;border:1px solid #334155;background:#0b1229;color:#e2e8f0;resize:vertical}
+    .controls{display:grid;gap:12px}
+    .legend{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+    .tag{display:flex;align-items:center;gap:6px;padding:4px 6px;border:1px solid #334155;border-radius:10px;background:#0b1229}
+    #filters .tag{font-size:12px}
+    .dot{width:12px;height:12px;border-radius:50%}
+    #filters{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px}
+    .count{margin-left:auto;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:2px 6px;font-size:11px;color:#cbd5e1}
+    .btn{cursor:pointer;background:#1f2547;border:1px solid #334155;border-radius:10px;padding:8px 10px;color:#e2e8f0;text-align:center}
+    .btn:hover{background:#252c5a}
+    #analyze.btn{font-size:16px}
+    #fhirToggle{border-radius:4px;padding:4px 12px;background:#151b36;font-weight:700;letter-spacing:0.02em;min-width:34px}
+    #fhirToggle:hover{background:#1c2345}
+    .row-between{display:flex;align-items:center;justify-content:space-between;gap:8px}
+    .muted{color:var(--muted)}
+    .small{font-size:12px}
+    /* Avoid overlap between layout dropdown and legend */
+    #graphControls .row-between.small{margin-bottom:8px}
+    #graphControls #layout{margin-top:-2px}
+    #graphControls .btn.small{padding:6px 8px}
+    .summary{font-size:14px;line-height:1.6;color:var(--text);background:#0b1229;border:1px solid #334155;border-radius:10px;padding:12px}
+    .insights-list{font-size:13px;line-height:1.5;color:#cbd5e1;background:#0b1229;border:1px solid #334155;border-radius:10px;padding:12px;min-height:40px}
+    .insight-item{padding:10px 0;border-bottom:1px solid #1f2a4a}
+    .insight-item:last-child{border-bottom:none}
+    .insight-label{font-weight:600;color:#e0f2fe;margin-bottom:4px;font-size:13px}
+    .insight-details{color:#94a3b8;font-size:12px;margin-top:4px;font-style:italic}
+    .status-pill{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;text-transform:capitalize;letter-spacing:0.02em}
+    .status-pill.addressed{background:rgba(34,197,94,0.14);color:#bbf7d0;border:1px solid rgba(34,197,94,0.6)}
+    .status-pill.not_addressed{background:rgba(239,68,68,0.18);color:#fecaca;border:1px solid rgba(239,68,68,0.65)}
+    .status-pill.uncertain{background:rgba(129,140,248,0.18);color:#c7d2fe;border:1px solid rgba(129,140,248,0.65)}
+    .insight-summary{padding:10px;border:1px solid #334155;border-radius:10px;background:rgba(148,163,184,0.12);margin-bottom:10px;font-size:12px;color:#e2e8f0;font-style:normal}
+    /* Make patient text more prominent */
+    #fhirPatient{color:#e2e8f0;font-size:14px;font-weight:700;font-style:normal}
+    .insight-metric{background:#1a1f3a;padding:4px 8px;border-radius:6px;font-size:11px;color:#a5b4fc;margin-top:4px;display:inline-block}
+    section{margin-bottom:20px}
+    details{border:1px solid #334155;border-radius:12px;padding:8px;background:#0b1229}
+    table{width:100%;border-collapse:collapse}
+    th,td{border:1px solid #1f2a4a;padding:6px;font-size:12px}
+    /* Collapse behavior for FHIR panel */
+    #fhirPanel.collapsed .insight-item:nth-child(n+2){display:none}
+    #fhirPanel.collapsed .insight-item:first-child .insight-label{display:none}
+    /* Bottom controls pane under the graph */
+    #graphControls{background:var(--panel);border:1px solid #1f2a4a;border-radius:14px;padding:14px;margin-top:14px}
+  </style>
+</head>
+<body>
+<header>
+  <h1 style="margin:0;font-size:18px">Articula Lab</h1>
+</header>
+<main>
+  <aside>
+    <div class="controls">
+      <section style="margin-top:4px">
+        <div class="row-between">
+          <h2>Patient</h2>
+          <button id="fhirToggle" class="btn small" aria-label="Collapse Patient" title="Collapse">-</button>
+        </div>
+        <div class="insights-list" id="fhirPanel">
+          <div class="insight-item">
+            <div id="fhirPatient" class="insight-details">—</div>
+          </div>
+          <div class="insight-item">
+            <div class="insight-label">Medical History</div>
+            <div id="fhirProblems" class="insight-details">—</div>
+          </div>
+          <div class="insight-item">
+            <div class="insight-label">Allergies</div>
+            <div id="fhirAllergies" class="insight-details">—</div>
+          </div>
+          <div class="insight-item">
+            <div class="insight-label">Medications (Active)</div>
+            <div id="fhirMeds" class="insight-details">—</div>
+          </div>
+          <div class="insight-item">
+            <div class="insight-label">Recent Vitals</div>
+            <div id="fhirVitals" class="insight-details">—</div>
+          </div>
+          <div class="insight-item">
+            <div class="insight-label">Recent Encounter</div>
+            <div id="fhirEncounter" class="insight-details">—</div>
+          </div>
+          <div class="insight-item">
+            <div class="insight-label">Labs</div>
+            <div id="fhirLabs" class="insight-details">—</div>
+          </div>
+          <div class="insight-item">
+            <div class="insight-label">Validation Checks</div>
+            <div id="fhirValidations" class="insight-details">—</div>
+          </div>
+        </div>
+      </section>
+      <div class="row-between" style="margin-top:2px">
+        <h2>Session Record</h2>
+        <button id="genSample" class="btn">Generate Sample Session</button>
+      </div>
+      <textarea id="inputText" spellcheck="false" style="margin-top:6px">Session Record ID: SR-2025-09-23-01
+Session Date: 2025-09-23
+
+Doctor: Hi Ava, good to see you. What brings you in today?
+Patient: I’ve had a nagging cough for about a week. It’s worse at night and sometimes I wheeze.
+Doctor: When did the cough start exactly, and has it changed over time?
+Patient: Started last Monday. It was dry at first; now there’s a little clear mucus. No fever.
+Doctor: Any shortness of breath with activity, chest pain, or trouble with stairs?
+Patient: Shortness of breath with the cough, but stairs are fine. No chest pain.
+Doctor: Any sick contacts or recent viral exposures?
+Patient: My son had a cold last week. I tested negative for COVID.
+Doctor: What are you using for relief? Any inhalers or cough meds?
+Patient: I use an albuterol inhaler—two puffs when I’m tight. Maybe three times this week.
+Doctor: Any nighttime symptoms—waking up to cough or wheeze?
+Patient: Yes, a couple of nights I woke up wheezing.
+Doctor: Current medications besides albuterol? Any side effects?
+Patient: Lisinopril 10 mg once daily. No issues.
+Doctor: Any medication allergies?
+Patient: Penicillin. I had an anaphylaxis reaction years ago.
+Doctor: Understood. On exam your lungs have a mild expiratory wheeze. Vitals today: BP 128/82 and oxygen saturation 97%.
+Patient: Okay.
+Doctor: Given the cough and wheeze after a likely viral trigger, this looks like a mild asthma flare. I’ll refill the albuterol and, if signs of bacterial bronchitis emerge, we’ll use azithromycin—avoiding penicillin-class antibiotics.
+Patient: Sounds good.
+
+[Dictation]
+Assessment and Plan: Mild asthma exacerbation with nocturnal symptoms following recent viral exposure. Continue albuterol HFA inhaler as needed; consider controller if symptoms persist >2 weeks. If bacterial features develop, start azithromycin 250 mg (two tablets day 1, then one daily days 2–5). Strict return precautions. Avoid penicillins due to documented anaphylaxis. Hypertension well controlled on lisinopril 10 mg daily.</textarea>
+
+      <button id="analyze" class="btn" style="margin-top:6px">Analyze Session</button>
+
+      
+    </div>
+  </aside>
+  <div class="center">
+    <div id="graphPane">
+      <div id="cy"></div>
+      <div id="analysisProgress">
+        <div class="progress-stage" id="stage1">
+          <div style="font-weight:600">Generating Knowledge Graph</div>
+        </div>
+        <div class="progress-stage" id="stage2">
+          <div style="font-weight:600">Projecting Risk Factors</div>
+        </div>
+      </div>
+    </div>
+    <div id="graphControls">
+      <div class="row-between small">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <select id="layout">
+            <option value="concentric">Concentric (by connectivity)</option>
+            <option value="cose-bilkent">CoSE Bilkent (force-directed)</option>
+            <option value="breadthfirst">Breadthfirst (hierarchical)</option>
+            <option value="grid">Grid (organized)</option>
+          </select>
+          <h2 style="margin:0 0 0 6px">Legends</h2>
+          <button id="filterAll" class="btn small">Select all</button>
+          <button id="filterNone" class="btn small">Clear all</button>
+        </div>
+        <div></div>
+      </div>
+      <div id="filters"></div>
+      <label class="tag" style="margin-top:6px"><input type="checkbox" id="edgeLabels" checked /> <span>Show edge labels</span></label>
+      <div id="layoutNote" class="small muted" style="margin-top:6px"></div>
+    </div>
+  </div>
+  <div id="insightsPane">
+    <div class="resizer left" id="insightsResizer"></div>
+    <div class="resizer right" id="insightsResizerRight"></div>
+    <section>
+      <h2>Summary</h2>
+      <div id="summary" class="summary">—</div>
+    </section>
+    <section>
+      <h2>Key Evidence & Findings</h2>
+      <div id="evidences" class="insights-list"></div>
+    </section>
+    <section>
+      <h2>Risk Factors</h2>
+      <div id="riskFactors" class="insights-list"></div>
+    </section>
+  </div>
+</main>
+
+<script>
+  // Register layout extension (CoSE Bilkent) if present
+  let HAS_COSE_BILKENT = false;
+
+  // Wait for Cytoscape and the plugin to be loaded
+  window.addEventListener('DOMContentLoaded', function() {
+    if (typeof cytoscape !== 'undefined' && typeof cytoscapeCoseBilkent !== 'undefined') {
+      cytoscape.use(cytoscapeCoseBilkent);
+      HAS_COSE_BILKENT = true;
+      console.log('CoSE Bilkent plugin registered successfully');
+    } else {
+      console.log('CoSE Bilkent plugin not available, will use fallback layouts');
+      // Update the dropdown to indicate CoSE Bilkent is unavailable
+      const note = document.getElementById('layoutNote');
+      if (note) note.textContent = 'Note: CoSE Bilkent unavailable, using Cose instead';
+    }
+  });
+
+  // Supported shapes per Cytoscape docs - Medical node types
+  const TYPE_STYLE = {
+    Population:     { color: '#60a5fa', shape: 'round-rectangle' },
+    Intervention:   { color: '#22c55e', shape: 'hexagon' },
+    Comparator:     { color: '#94a3b8', shape: 'hexagon' },
+    Outcome:        { color: '#22d3ee', shape: 'ellipse' },
+    Condition:      { color: '#f43f5e', shape: 'diamond' },
+    Medication:     { color: '#f59e0b', shape: 'round-rectangle' },
+    Procedure:      { color: '#a78bfa', shape: 'hexagon' },
+    Anatomy:        { color: '#84cc16', shape: 'ellipse' },
+    Finding:        { color: '#38bdf8', shape: 'rectangle' },
+    Evidence:       { color: '#fbbf24', shape: 'diamond' },
+    Mechanism:      { color: '#f97316', shape: 'round-diamond' },
+    Guideline:      { color: '#8b5cf6', shape: 'hexagon' },
+    TimeFrame:      { color: '#06b6d4', shape: 'rectangle' },
+    RiskFactor:     { color: '#ef4444', shape: 'round-rectangle' },
+    Setting:        { color: '#6b7280', shape: 'rectangle' }
+  };
+
+  const EDGE_STYLE = {
+    treats:              { lineStyle: 'solid' },
+    causes:              { lineStyle: 'solid' },
+    contraindicated_for: { lineStyle: 'dashed' },
+    indicates:           { lineStyle: 'solid' },
+    administered_to:     { lineStyle: 'solid' },
+    compared_with:       { lineStyle: 'dotted' },
+    measured_in:         { lineStyle: 'dotted' },
+    associated_with:     { lineStyle: 'dashed' },
+    supports:            { lineStyle: 'dotted' },
+    located_in:          { lineStyle: 'dashed' },
+    occurs_during:       { lineStyle: 'dashed' },
+    increases_risk_of:   { lineStyle: 'solid' },
+    decreases_risk_of:   { lineStyle: 'solid' },
+    part_of:             { lineStyle: 'dashed' }
+  };
+
+  const FILTER_TYPES = Object.keys(TYPE_STYLE);
+
+  const cy = cytoscape({
+    container: document.getElementById('cy'),
+    elements: [],
+    wheelSensitivity: 0.2,
+    minZoom: 0.2,
+    maxZoom: 4,
+    style: [
+      { selector: 'node', style: {
+          'label': 'data(label)',
+          'background-color': 'data(color)',
+          'shape': 'data(shape)',
+          'color': '#ffffff',
+          'font-size': 16,
+          'font-weight': 600,
+          'text-wrap': 'wrap',
+          'text-max-width': 200,
+          'text-halign': 'center',
+          'text-valign': 'center',
+          'padding': 12,
+          'border-width': 2,
+          'border-color': '#334155',
+          'text-background-color': '#0b1020',
+          'text-background-opacity': 0.85,
+          'text-background-padding': 4,
+          'text-outline-color': '#0b1020',
+          'text-outline-width': 2
+        }
+      },
+      { selector: 'edge', style: {
+          'curve-style': 'bezier',
+          'width': 2.5,
+          'line-color': '#475569',
+          'target-arrow-color': '#475569',
+          'target-arrow-shape': 'triangle',
+          'arrow-scale': 1.2,
+          'line-style': 'data(lineStyle)',
+          'label': 'data(type)',
+          'font-size': 16,
+          'font-weight': 600,
+          'text-rotation': 'autorotate',
+          'color': '#e0f2fe',
+          'text-background-color': '#0b1020',
+          'text-background-opacity': 0.8,
+          'text-background-padding': 3,
+          'text-margin-y': -2
+        }
+      },
+      { selector: '.hidden', style: { 'display': 'none' } },
+      { selector: ':selected', style: {
+          'border-color': '#f472b6',
+          'border-width': 3,
+          'line-color': '#f472b6',
+          'target-arrow-color': '#f472b6',
+          'width': 3.5
+        }
+      }
+    ]
+  });
+
+  // Track currently running layout to stop it before switching
+  let CURRENT_LAYOUT = null;
+
+  const filtersEl = document.getElementById('filters');
+  FILTER_TYPES.forEach(t => {
+    const id = 'f-' + t;
+    const row = document.createElement('label');
+    row.className = 'tag';
+    row.innerHTML = `<input type="checkbox" id="${id}" checked /><span>${t}</span><span class="count" data-type="${t}">0</span>`;
+    filtersEl.appendChild(row);
+    row.querySelector('input').addEventListener('change', applyFilters);
+  });
+
+  const filterAllBtn = document.getElementById('filterAll');
+  const filterNoneBtn = document.getElementById('filterNone');
+  if (filterAllBtn) filterAllBtn.onclick = () => {
+    FILTER_TYPES.forEach(t => {
+      const cb = document.getElementById('f-' + t);
+      if (cb) cb.checked = true;
+    });
+    applyFilters();
+  };
+  if (filterNoneBtn) filterNoneBtn.onclick = () => {
+    FILTER_TYPES.forEach(t => {
+      const cb = document.getElementById('f-' + t);
+      if (cb) cb.checked = false;
+    });
+    applyFilters();
+  };
+
+  document.getElementById('layout').onchange = () => runLayout();
+  document.getElementById('edgeLabels').addEventListener('change', (e) => {
+    const show = e.target.checked;
+    cy.style().selector('edge').style('label', show ? 'data(type)' : '').update();
+  });
+
+  // Show analysis progress with stages
+  function showAnalysisProgress(stage) {
+    const progress = document.getElementById('analysisProgress');
+    if (!progress) return;
+    if (!stage) {
+      progress.style.display = 'none';
+      document.querySelectorAll('.progress-stage').forEach(s => s.classList.remove('active'));
+      return;
+    }
+    progress.style.display = 'block';
+
+    const stages = ['stage1', 'stage2'];
+    document.querySelectorAll('.progress-stage').forEach(s => s.classList.remove('active'));
+    for (let i = 0; i < stages.length && i < stage; i++) {
+      const el = document.getElementById(stages[i]);
+      if (el) el.classList.add('active');
+    }
+  }
+
+  document.getElementById('analyze').onclick = async () => {
+    const btn = document.getElementById('analyze');
+    const txt = (document.getElementById('inputText')?.value || '').trim();
+    if(!txt) return;
+    const prev = btn.textContent;
+    btn.textContent = 'Processing…';
+    btn.disabled = true;
+
+    try{
+      // Stage 1: Knowledge graph extraction
+      showAnalysisProgress(1);
+      await new Promise(resolve => setTimeout(resolve, 300)); // Brief pause for UI update
+
+      const res = await fetch('/analyze', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ text: txt }) });
+      if(!res.ok) throw new Error('Analyze failed');
+
+      // Stage 2: Risk projection complete
+      showAnalysisProgress(2);
+      await new Promise(resolve => setTimeout(resolve, 400));
+
+      await loadData();
+
+      // Hide progress after completion
+      setTimeout(() => showAnalysisProgress(null), 400);
+    } catch(err){
+      console.warn(err);
+      showAnalysisProgress(null);
+      const note = document.getElementById('layoutNote');
+      if (note) note.textContent = 'Analysis failed. Check the server console for details.';
+    } finally {
+      btn.textContent = prev;
+      btn.disabled = false;
+    }
+  };
+
+  // Generate Sample Session
+  document.getElementById('genSample').onclick = async () => {
+    const btn = document.getElementById('genSample');
+    const textarea = document.getElementById('inputText');
+    const prev = btn.textContent;
+    btn.textContent = 'Generating Sample Session...';
+    btn.disabled = true;
+    try{
+      const res = await fetch('/generate-sample', { method: 'POST' });
+      if(!res.ok) throw new Error('Generate failed');
+      const data = await res.json();
+      const text = String(data?.text || '').trim();
+      if (!text) throw new Error('Empty generation');
+      if (textarea) textarea.value = text;
+    } catch(err){
+      console.warn(err);
+      const note = document.getElementById('layoutNote');
+      if (note) note.textContent = 'Sample generation failed. Check server logs or API key.';
+    } finally {
+      btn.textContent = prev;
+      btn.disabled = false;
+    }
+  };
+
+  // Auto-adjust Session Text textbox height based on available space in the left pane
+  function adjustInputTextarea(){
+    try{
+      const aside = document.querySelector('aside');
+      const textarea = document.getElementById('inputText');
+      const analyzeBtn = document.getElementById('analyze');
+      if (!aside || !textarea) return;
+      const asideRect = aside.getBoundingClientRect();
+      const taRect = textarea.getBoundingClientRect();
+      const analyzeRect = analyzeBtn ? analyzeBtn.getBoundingClientRect() : null;
+      const reserved = (analyzeRect ? analyzeRect.height + 16 : 0) + 24; // button + gaps
+      const available = Math.floor(asideRect.bottom - taRect.top - reserved);
+      const minPx = Math.max(360, available);
+      if (Number.isFinite(minPx) && minPx > 0) textarea.style.minHeight = minPx + 'px';
+    } catch(e) { /* noop */ }
+  }
+
+  window.addEventListener('resize', adjustInputTextarea);
+
+  // Simplified UI: removed details panel and selection attributes
+
+  function download(name, data){
+    const a = document.createElement('a');
+    a.href = typeof data === 'string' ? 'data:text/plain;charset=utf-8,' + encodeURIComponent(data) : data;
+    a.download = name;
+    a.click();
+  }
+
+  function applyFilters(){
+    FILTER_TYPES.forEach(t => {
+      const checked = document.getElementById('f-' + t).checked;
+      cy.nodes(`[type = "${t}"]`).forEach(n => n.toggleClass('hidden', !checked));
+    });
+  }
+
+  function updateFilterCounts(){
+    try{
+      FILTER_TYPES.forEach(t => {
+        const count = cy.nodes(`[type = "${t}"]`).length;
+        const el = document.querySelector(`.count[data-type="${t}"]`);
+        if (el) el.textContent = String(count);
+      });
+    } catch(e) {}
+  }
+
+  function runLayout(){
+    const sel = document.getElementById('layout');
+    let requested = sel.value;
+    let used = requested;
+
+    // Handle CoSE Bilkent fallback
+    if (used === 'cose-bilkent') {
+      if (!HAS_COSE_BILKENT) {
+        used = 'cose'; // Use built-in cose instead of breadthfirst
+        const note = document.getElementById('layoutNote');
+        if (note && requested === 'cose-bilkent') {
+          note.textContent = 'CoSE Bilkent unavailable, using Cose';
+        }
+      }
+    }
+
+    // Stop any running layout
+    if (CURRENT_LAYOUT && typeof CURRENT_LAYOUT.stop === 'function') {
+      try { CURRENT_LAYOUT.stop(); } catch(e) {}
+    }
+
+    // Reset node positions to force visible change
+    cy.nodes().forEach(n => {
+      n.position({ x: Math.random() * 100, y: Math.random() * 100 });
+    });
+
+    const base = {
+      name: used,
+      animate: true,
+      fit: true,
+      padding: 10,
+      randomize: false,
+      nodeDimensionsIncludeLabels: true
+    };
+
+    // Per-layout tuning to make differences more visible
+    if (used === 'breadthfirst') {
+      // Find root nodes for hierarchical layout
+      let roots = cy.nodes().filter(n => n.indegree() === 0);
+      if (roots.length === 0) {
+        roots = cy.nodes().filter(n => n.outdegree() > 0 && n.indegree() < n.outdegree());
+      }
+      if (roots.length === 0) {
+        roots = cy.nodes().slice(0, 1);
+      }
+      // Configure breadthfirst for LEFT-TO-RIGHT layout with minimal spacing
+      Object.assign(base, {
+        directed: true,
+        circle: false,
+        grid: false,
+        spacingFactor: 0.8,  // Further reduced from 1.2
+        avoidOverlap: true,
+        roots: roots.map(n => n.id()),
+        maximal: false,
+        transform: function(node, position) {
+          // Swap x and y to make it horizontal (left to right) with minimal spread
+          return {
+            x: position.y * 0.8,  // Further reduced from 1.2
+            y: position.x * 0.7
+          };
+        }
+      });
+    } else if (used === 'cose-bilkent') {
+      // CoSE Bilkent - physics-based layout with minimal spacing
+      Object.assign(base, {
+        randomize: true,
+        idealEdgeLength: 25,  // Further reduced from 50
+        nodeRepulsion: 1000,  // Further reduced from 2500
+        edgeElasticity: 0.45,
+        quality: 'default',
+        gravity: 0.8,  // Further increased from 0.4
+        numIter: 2500
+      });
+    } else if (used === 'cose') {
+      // Built-in Cose layout with minimal spacing
+      Object.assign(base, {
+        randomize: true,
+        idealEdgeLength: function(edge) { return 25; },  // Further reduced from 50
+        nodeRepulsion: function(node) { return 400; },  // Further reduced from 1024
+        nodeOverlap: 5,  // Further reduced from 10
+        refresh: 20,
+        fit: true,
+        padding: 10,
+        componentSpacing: 10,  // Further reduced from 20
+        edgeElasticity: function(edge) { return 32; },
+        nestingFactor: 1.1,
+        gravity: 4,  // Further increased from 2
+        numIter: 1000,
+        initialTemp: 800,
+        coolingFactor: 0.99,
+        minTemp: 1.0
+      });
+    } else if (used === 'concentric') {
+      // Concentric circles with minimal spacing
+      const degrees = cy.nodes().map(n => ({node: n, degree: n.degree()}));
+      degrees.sort((a, b) => b.degree - a.degree);
+      Object.assign(base, {
+        concentric: function(node){
+          const d = degrees.find(x => x.node.id() === node.id());
+          return d ? d.degree : 0;
+        },
+        levelWidth: function(nodes){
+          return 0.5;  // Further reduced from 1
+        },
+        spacingFactor: 0.5,  // Further reduced from 0.8
+        minNodeSpacing: 15,  // Further reduced from 30
+        avoidOverlap: true
+      });
+    } else if (used === 'grid') {
+      // Simple grid layout with minimal spacing
+      Object.assign(base, {
+        padding: 8,  // Further reduced from 15
+        condense: true,
+        rows: Math.ceil(Math.sqrt(cy.nodes().length)),
+        avoidOverlap: true,
+        avoidOverlapPadding: 5  // Further reduced from 10
+      });
+    }
+
+    CURRENT_LAYOUT = cy.layout(base);
+    CURRENT_LAYOUT.run();
+  }
+
+  async function loadData(){
+    try{
+      const res = await fetch('data/kg.json', { cache: 'no-cache' });
+      if(!res.ok) throw new Error('Could not load data/kg.json');
+      const data = await res.json();
+      const elements = toElements(data);
+      cy.elements().remove();
+      cy.add(elements);
+      cy.resize();
+      // Set dropdown to concentric and run layout
+      const sel = document.getElementById('layout');
+      sel.value = 'concentric';
+      runLayout();
+      applyFilters();
+      updateFilterCounts();
+      updateInsights(data);
+    } catch(err){
+      console.warn('KG load failed:', err);
+    }
+  }
+
+  function toElements(json){
+    // Format edge labels to be more readable
+    function formatEdgeLabel(type) {
+      return type
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, l => l.toUpperCase());
+    }
+
+    const nodes = (json.nodes||[]).map(n => ({
+      data: {
+        id: n.id,
+        type: n.type,
+        label: n.label,
+        color: (TYPE_STYLE[n.type]||{}).color || '#94a3b8',
+        shape: (TYPE_STYLE[n.type]||{}).shape || 'ellipse',
+        attributes: n.attributes || {},
+        source_span: n.source_span || ''
+      }
+    }));
+
+    const edges = (json.edges||[]).map((e, i) => ({
+      data: {
+        id: 'e' + i,
+        source: e.source,
+        target: e.target,
+        type: formatEdgeLabel(e.type),
+        rawType: e.type,
+        lineStyle: (EDGE_STYLE[e.type]||{}).lineStyle || 'solid'
+      }
+    }));
+    return [...nodes, ...edges];
+  }
+
+  // Kick off
+  loadFhir();
+  loadData();
+  // Initial sizing of Session Text
+  setTimeout(adjustInputTextarea, 0);
+
+  let FHIR_DATA = null;
+
+  async function loadFhir(){
+    try{
+      const res = await fetch('data/fhir.json', { cache: 'no-cache' });
+      if (!res.ok) throw new Error('Could not load data/fhir.json');
+      FHIR_DATA = await res.json();
+      renderFhirPanel(FHIR_DATA);
+    } catch (e) {
+      console.warn('FHIR load failed:', e);
+    }
+  }
+
+  // Resizable insights pane
+  (function initResizer() {
+    const resizerLeft = document.getElementById('insightsResizer');
+    const resizerRight = document.getElementById('insightsResizerRight');
+    const insightsPane = document.getElementById('insightsPane');
+    const main = document.querySelector('main');
+    let isResizing = false;
+    let startX = 0;
+    let startWidth = 0;
+    let activeSide = null; // 'left' | 'right'
+
+    if (!insightsPane) return;
+
+    function beginResize(side, e){
+      isResizing = true;
+      activeSide = side;
+      startX = e.clientX;
+      startWidth = insightsPane.offsetWidth;
+      document.body.style.cursor = 'col-resize';
+      e.preventDefault();
+    }
+
+    if (resizerLeft) {
+      resizerLeft.addEventListener('mousedown', (e) => beginResize('left', e));
+    }
+    if (resizerRight) {
+      resizerRight.addEventListener('mousedown', (e) => beginResize('right', e));
+    }
+
+    document.addEventListener('mousemove', (e) => {
+      if (!isResizing || !activeSide) return;
+
+      const rect = insightsPane.getBoundingClientRect();
+      let newWidth;
+      if (activeSide === 'left') {
+        newWidth = rect.right - e.clientX;
+      } else {
+        newWidth = e.clientX - rect.left;
+      }
+
+      newWidth = Math.max(newWidth, 280);
+
+      insightsPane.style.width = `${newWidth}px`;
+
+      if (cy) cy.resize();
+    });
+
+    document.addEventListener('mouseup', () => {
+      if (!isResizing) return;
+      isResizing = false;
+      activeSide = null;
+      document.body.style.cursor = '';
+    });
+  })();
+
+  function updateInsights(json){
+    try{
+      const summaryEl = document.getElementById('summary');
+      const evidencesEl = document.getElementById('evidences');
+      const riskFactorsEl = document.getElementById('riskFactors');
+      if (summaryEl) summaryEl.textContent = (json.summary || '').trim() || '—';
+
+      const nodes = Array.isArray(json.nodes) ? json.nodes : [];
+      const edges = Array.isArray(json.edges) ? json.edges : [];
+
+      const connectivityScore = {};
+      edges.forEach(e => {
+        connectivityScore[e.source] = (connectivityScore[e.source]||0) + 1;
+        connectivityScore[e.target] = (connectivityScore[e.target]||0) + 1;
+      });
+
+      const byImportance = (a, b) => (connectivityScore[b.id]||0) - (connectivityScore[a.id]||0);
+      const renderEnhancedList = (el, items) => {
+        if (!el) return;
+        if (items.length === 0) {
+          el.innerHTML = '<div style="color:#64748b;font-style:italic">No items found</div>';
+          return;
+        }
+        el.innerHTML = items.map(n => {
+          let html = `<div class="insight-item">`;
+          html += `<div class="insight-label">${n.label || n.id}</div>`;
+
+          // Add metrics for Outcome nodes
+          if (n.type === 'Outcome' && n.attributes) {
+            const attrs = [];
+            if (n.attributes.metric_name) attrs.push(n.attributes.metric_name);
+            if (n.attributes.value && n.attributes.direction) {
+              const dir = n.attributes.direction === 'decreased' ? '↓' : '↑';
+              attrs.push(`${dir} ${n.attributes.value}${n.attributes.unit || ''}`);
+            }
+            if (n.attributes.timeframe) attrs.push(n.attributes.timeframe);
+            if (attrs.length > 0) {
+              html += `<div class="insight-metric">${attrs.join(' | ')}</div>`;
+            }
+          }
+
+          // Add source span if available
+          if (n.source_span) {
+            html += `<div class="insight-details">"${n.source_span}"</div>`;
+          }
+
+          html += `</div>`;
+          return html;
+        }).join('');
+      };
+
+      const statusLabels = {
+        addressed: 'Discussed',
+        not_addressed: 'Not Discussed',
+        uncertain: 'Uncertain'
+      };
+      const statusPriority = { not_addressed: 0, uncertain: 1, addressed: 2 };
+
+      const renderRiskFactors = (el, items, projection) => {
+        if (!el) return;
+        if (items.length === 0) {
+          el.innerHTML = '<div style="color:#64748b;font-style:italic">No risk factors detected</div>';
+          return;
+        }
+
+        const coverageMap = new Map();
+        if (projection && Array.isArray(projection.risk_factors)) {
+          projection.risk_factors.forEach(rf => {
+            if (rf && typeof rf.id === 'string') coverageMap.set(rf.id, rf);
+          });
+        }
+
+        const decorated = items.map(n => {
+          const info = coverageMap.get(n.id) || null;
+          const attrStatus = typeof n?.attributes?.coverage_status === 'string' ? n.attributes.coverage_status.toLowerCase() : '';
+          const rawStatus = (info?.status || attrStatus || 'uncertain').toLowerCase();
+          const normalized = Object.prototype.hasOwnProperty.call(statusPriority, rawStatus) ? rawStatus : 'uncertain';
+          return {
+            node: n,
+            info,
+            status: normalized,
+            priority: statusPriority[normalized] ?? 3,
+            connectivity: connectivityScore[n.id] || 0
+          };
+        }).sort((a, b) => {
+          if (a.priority !== b.priority) return a.priority - b.priority;
+          if (b.connectivity !== a.connectivity) return b.connectivity - a.connectivity;
+          return (a.node.label || '').localeCompare(b.node.label || '');
+        });
+
+        let html = '';
+        if (projection && typeof projection.summary === 'string' && projection.summary.trim()) {
+          html += `<div class="insight-summary">${projection.summary.trim()}</div>`;
+        }
+
+        html += decorated.map(({ node, info, status }) => {
+          const label = node.label || node.id;
+          const statusLabel = statusLabels[status] || 'Unclassified';
+          const rationale = info?.rationale || node?.attributes?.coverage_rationale || '';
+          const doctorQuote = info?.doctor_quote || node?.attributes?.doctor_quote || '';
+          const patientQuote = info?.patient_quote || node?.attributes?.patient_quote || '';
+
+          let block = `<div class="insight-item">`;
+          block += `<div class="row-between" style="align-items:flex-start;gap:14px;">`;
+          block += `<div style="flex:1 1 auto;min-width:0;">`;
+          block += `<div class="insight-label">${label}</div>`;
+          if (rationale) {
+            block += `<div class="insight-details" style="font-style:normal;">${rationale}</div>`;
+          }
+          if (node.source_span) {
+            block += `<div class="insight-details">"${node.source_span}"</div>`;
+          }
+          if (doctorQuote) {
+            block += `<div class="insight-details" style="font-style:normal;"><span style="color:#a5b4fc">Doctor:</span> "${doctorQuote}"</div>`;
+          }
+          if (patientQuote) {
+            block += `<div class="insight-details" style="font-style:normal;"><span style="color:#a5b4fc">Patient:</span> "${patientQuote}"</div>`;
+          }
+          block += `</div>`;
+          block += `<span class="status-pill ${status}">${statusLabel}</span>`;
+          block += `</div>`;
+          block += `</div>`;
+          return block;
+        }).join('');
+
+        el.innerHTML = html;
+      };
+
+      // For medical node types: Evidence, Finding, Outcome nodes
+      const evidenceNodes = nodes.filter(n =>
+        n.type === 'Evidence' ||
+        n.type === 'Finding' ||
+        n.type === 'Outcome' ||
+        n.type === 'Mechanism'
+      ).sort(byImportance);
+      renderEnhancedList(evidencesEl, evidenceNodes);
+
+      // RiskFactor nodes represent ongoing uncertainties and potential complications
+      const riskFactorNodes = nodes.filter(n => n.type === 'RiskFactor');
+      renderRiskFactors(riskFactorsEl, riskFactorNodes, json.risk_projection);
+      // After insights update, if FHIR loaded, run validations against KG
+      if (FHIR_DATA) runFhirValidations(FHIR_DATA, { nodes, edges });
+    } catch(err){
+      console.warn('Insights update failed:', err);
+    }
+  }
+
+  function renderFhirPanel(fhir){
+    try{
+      const p = fhir?.patient;
+      const name = p?.name?.[0] ? `${(p.name[0].given||[]).join(' ')} ${p.name[0].family}` : 'Unknown';
+      // Derive age from birthDate if available
+      function calcAge(d){
+        try{
+          const dob = new Date(d);
+          const now = new Date();
+          let age = now.getFullYear() - dob.getFullYear();
+          const m = now.getMonth() - dob.getMonth();
+          if (m < 0 || (m === 0 && now.getDate() < dob.getDate())) age--;
+          return String(age);
+        } catch { return ''; }
+      }
+      const age = p?.birthDate ? calcAge(p.birthDate) : '';
+      const id = Array.isArray(p?.identifier) && p.identifier[0]?.value ? `MRN ${p.identifier[0].value}` : '';
+      const demo = [p?.gender, p?.birthDate, age ? `${age}y` : '', id].filter(Boolean).join(' • ');
+      const patientEl = document.getElementById('fhirPatient');
+      if (patientEl) patientEl.textContent = `${name}${demo ? ' — ' + demo : ''}`;
+
+      const problemsEl = document.getElementById('fhirProblems');
+      const probs = Array.isArray(fhir?.problems) ? fhir.problems.map(c => {
+        const codeTxt = c.code?.text || '';
+        const code = c.code?.coding?.[0]?.code ? `SNOMED ${c.code.coding[0].code}` : '';
+        const status = c.clinicalStatus || '';
+        const onset = c.onsetDateTime || '';
+        return [codeTxt, code, status, onset].filter(Boolean).join(' — ');
+      }) : [];
+      if (problemsEl) problemsEl.textContent = probs.length ? probs.join('; ') : '—';
+
+      const allergiesEl = document.getElementById('fhirAllergies');
+      const algs = Array.isArray(fhir?.allergies) ? fhir.allergies.map(a => {
+        const label = a.code?.text || '';
+        const rx = a.reaction?.[0]?.manifestation?.[0]?.text || '';
+        const crit = a.criticality ? `criticality: ${a.criticality}` : '';
+        return [label, rx, crit].filter(Boolean).join(' — ');
+      }) : [];
+      if (allergiesEl) allergiesEl.textContent = algs.length ? algs.join('; ') : '—';
+
+      const medsEl = document.getElementById('fhirMeds');
+      const meds = Array.isArray(fhir?.medications) ? fhir.medications.map(m => {
+        const txt = m.medicationCodeableConcept?.text || '';
+        const sig = m.dosageInstruction?.[0]?.text || '';
+        return [txt, sig].filter(Boolean).join(' — ');
+      }) : [];
+      if (medsEl) medsEl.textContent = meds.length ? meds.join('; ') : '—';
+
+      const vitalsEl = document.getElementById('fhirVitals');
+      const bpObs = (fhir?.observations||[]).find(o => (o.code?.text||'').toLowerCase().includes('blood pressure'));
+      const spo2Obs = (fhir?.observations||[]).find(o => (o.code?.text||'').toLowerCase().includes('spo2'));
+      const hrObs = (fhir?.observations||[]).find(o => (o.code?.text||'').toLowerCase().includes('heart rate'));
+      const v = [];
+      if (bpObs?.valueString) v.push(`BP ${bpObs.valueString}`);
+      if (typeof spo2Obs?.valueQuantity?.value === 'number') v.push(`SpO₂ ${spo2Obs.valueQuantity.value}%`);
+      if (typeof hrObs?.valueQuantity?.value === 'number') v.push(`HR ${hrObs.valueQuantity.value} bpm`);
+      if (vitalsEl) vitalsEl.textContent = v.length ? v.join(' • ') : '—';
+
+      // Encounter (most recent)
+      const encEl = document.getElementById('fhirEncounter');
+      if (encEl) {
+        const enc = Array.isArray(fhir?.encounters) && fhir.encounters.length ? fhir.encounters[0] : null;
+        if (enc) {
+          const date = enc.period?.start || enc.period?.end || '';
+          const cls = enc.class?.code || enc.class || '';
+          const reason = enc.reasonCode?.[0]?.text || enc.reason?.[0]?.text || '';
+          const prov = enc.participant?.[0]?.individual?.display || enc.serviceProvider?.display || '';
+          const parts = [date, cls ? cls.charAt(0).toUpperCase() + cls.slice(1) : '', reason ? `Reason: ${reason}` : '', prov ? `Provider: ${prov}` : ''].filter(Boolean);
+          encEl.textContent = parts.length ? parts.join(' — ') : '—';
+        } else {
+          encEl.textContent = '—';
+        }
+      }
+
+      // Labs (selected observations)
+      const labsEl = document.getElementById('fhirLabs');
+      if (labsEl) {
+        const labItems = (fhir?.observations||[]).filter(o => {
+          const t = String(o.code?.text||'').toLowerCase();
+          return t.includes('a1c') || t.includes('hemoglobin a1c') || t.includes('wbc') || t.includes('white blood cell') || t.includes('cholesterol') || t.includes('ldl') || t.includes('hdl');
+        }).map(o => {
+          const t = o.code?.text || 'Lab';
+          if (typeof o.valueQuantity?.value === 'number') {
+            const unit = o.valueQuantity?.unit || '';
+            return `${t}: ${o.valueQuantity.value}${unit ? ' ' + unit : ''}`;
+          }
+          if (o.valueString) return `${t}: ${o.valueString}`;
+          return t;
+        });
+        labsEl.textContent = labItems.length ? labItems.join(' • ') : '—';
+      }
+    } catch(e){ console.warn('Render FHIR failed:', e); }
+  }
+
+  // Patient panel collapse/expand toggle
+  (function initFhirToggle(){
+    const panel = document.getElementById('fhirPanel');
+    const btn = document.getElementById('fhirToggle');
+    if (!panel || !btn) return;
+    let collapsed = false;
+    function render(){
+      panel.classList.toggle('collapsed', collapsed);
+      btn.textContent = collapsed ? '+' : '-';
+      btn.setAttribute('aria-label', collapsed ? 'Expand Patient' : 'Collapse Patient');
+      btn.title = collapsed ? 'Expand' : 'Collapse';
+      // Recompute available space for Session Text when FHIR panel changes
+      adjustInputTextarea();
+    }
+    btn.addEventListener('click', () => {
+      collapsed = !collapsed;
+      render();
+      try{ if (cy) cy.resize(); } catch {}
+    });
+    render();
+  })();
+
+  function runFhirValidations(fhir, kg){
+    try{
+      const validationsEl = document.getElementById('fhirValidations');
+      if (!validationsEl) return;
+      const issues = [];
+
+      const allergySet = new Set((fhir.allergies||[]).map(a => String(a.code?.text||'').toLowerCase()));
+      const medNamesInChart = new Set((fhir.medications||[]).map(m => String(m.medicationCodeableConcept?.text||'').toLowerCase()));
+      const kgMeds = (kg.nodes||[]).filter(n => n.type === 'Medication');
+
+      kgMeds.forEach(n => {
+        const label = String(n.label||'').toLowerCase();
+        // Drug–allergy conflict (simple contains matching)
+        allergySet.forEach(alg => {
+          if (alg && label.includes(alg)) {
+            issues.push(`Allergy conflict: proposed medication "${n.label}" matches allergy "${alg}"`);
+          }
+        });
+        // Duplicate/ongoing therapy
+        medNamesInChart.forEach(cm => {
+          if (cm && label.includes(cm.split(' ')[0])) {
+            issues.push(`Potential duplicate therapy: "${n.label}" overlaps with active med "${cm}"`);
+          }
+        });
+      });
+
+      // Formulary guidance (suggest alternatives if amoxicillin/penicillin mentioned)
+      const textMeds = kgMeds.map(m => String(m.label||'').toLowerCase()).join(' | ');
+      if ((/penicillin|amoxicillin/).test(textMeds)){
+        const alts = (fhir.formulary?.preferredAlternatives||[]).map(a => a.generic).join(', ');
+        if (alts) issues.push(`Formulary/Allergy-safe alternatives suggested: ${alts}`);
+      }
+
+      validationsEl.innerHTML = issues.length
+        ? issues.map(s => `<div>• ${s}</div>`).join('')
+        : '<span style="color:#64748b;font-style:italic">No issues detected</span>';
+    } catch(e){ console.warn('FHIR validations failed:', e); }
+  }
+</script>
+</body>
+</html>

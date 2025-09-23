@@ -1,0 +1,240 @@
+{
+  "nodes": [
+    {
+      "id": "1",
+      "type": "Population",
+      "label": "Ava",
+      "attributes": {
+        "size": "1",
+        "age": "unknown",
+        "gender": "female",
+        "conditions": "asthma, hypertension"
+      },
+      "source_span": "Patient: I’ve had a nagging cough for about a week."
+    },
+    {
+      "id": "2",
+      "type": "Condition",
+      "label": "Mild asthma exacerbation",
+      "attributes": {},
+      "source_span": "Doctor: Given the cough and wheeze after a likely viral trigger, this looks like a mild asthma flare."
+    },
+    {
+      "id": "3",
+      "type": "Intervention",
+      "label": "Albuterol HFA inhaler",
+      "attributes": {
+        "technical_details": "two puffs as needed",
+        "deployment_specifics": "used for relief"
+      },
+      "source_span": "Doctor: I’ll refill the albuterol..."
+    },
+    {
+      "id": "4",
+      "type": "Medication",
+      "label": "Albuterol",
+      "attributes": {
+        "dosage": "two puffs",
+        "route": "inhalation",
+        "frequency": "as needed"
+      },
+      "source_span": "Patient: I use an albuterol inhaler—two puffs when I’m tight."
+    },
+    {
+      "id": "5",
+      "type": "Medication",
+      "label": "Azithromycin",
+      "attributes": {
+        "dosage": "250 mg",
+        "route": "oral",
+        "frequency": "two tablets day 1, then one daily days 2–5"
+      },
+      "source_span": "If bacterial features develop, start azithromycin 250 mg..."
+    },
+    {
+      "id": "6",
+      "type": "RiskFactor",
+      "label": "Anaphylaxis to penicillin",
+      "attributes": {
+        "severity": "high",
+        "likelihood": "documented"
+      },
+      "source_span": "Patient: I had an anaphylaxis reaction years ago."
+    },
+    {
+      "id": "7",
+      "type": "Finding",
+      "label": "Mild expiratory wheeze",
+      "attributes": {},
+      "source_span": "On exam your lungs have a mild expiratory wheeze."
+    },
+    {
+      "id": "8",
+      "type": "Outcome",
+      "label": "Control of hypertension",
+      "attributes": {
+        "metric_name": "Blood Pressure",
+        "value": "128/82",
+        "direction": "controlled",
+        "unit": "mmHg",
+        "timeframe": "current"
+      },
+      "source_span": "Vitals today: BP 128/82..."
+    },
+    {
+      "id": "9",
+      "type": "Evidence",
+      "label": "Assessment of asthma exacerbation",
+      "attributes": {},
+      "source_span": "Assessment and Plan: Mild asthma exacerbation with nocturnal symptoms following recent viral exposure."
+    },
+    {
+      "id": "10",
+      "type": "RiskFactor",
+      "label": "Potential for bacterial bronchitis",
+      "attributes": {
+        "severity": "medium",
+        "likelihood": "possible if symptoms persist"
+      },
+      "source_span": "if signs of bacterial bronchitis emerge..."
+    },
+    {
+      "id": "11",
+      "type": "RiskFactor",
+      "label": "Generalizability issues",
+      "attributes": {
+        "severity": "medium",
+        "likelihood": "unknown"
+      },
+      "source_span": "Doctor: Given the cough and wheeze after a likely viral trigger..."
+    },
+    {
+      "id": "12",
+      "type": "RiskFactor",
+      "label": "Unmeasured confounders",
+      "attributes": {
+        "severity": "medium",
+        "likelihood": "unknown"
+      },
+      "source_span": "Patient: My son had a cold last week."
+    },
+    {
+      "id": "13",
+      "type": "RiskFactor",
+      "label": "Measurement validity",
+      "attributes": {
+        "severity": "medium",
+        "likelihood": "unknown"
+      },
+      "source_span": "Doctor: I’ll refill the albuterol..."
+    },
+    {
+      "id": "14",
+      "type": "RiskFactor",
+      "label": "Sustainability concerns",
+      "attributes": {
+        "severity": "medium",
+        "likelihood": "unknown"
+      },
+      "source_span": "consider controller if symptoms persist >2 weeks."
+    },
+    {
+      "id": "15",
+      "type": "RiskFactor",
+      "label": "Selection biases",
+      "attributes": {
+        "severity": "medium",
+        "likelihood": "unknown"
+      },
+      "source_span": "Doctor: Given the cough and wheeze..."
+    },
+    {
+      "id": "16",
+      "type": "RiskFactor",
+      "label": "Data quality issues",
+      "attributes": {
+        "severity": "medium",
+        "likelihood": "unknown"
+      },
+      "source_span": "Assessment and Plan: Mild asthma exacerbation..."
+    }
+  ],
+  "edges": [
+    {
+      "source": "1",
+      "type": "administered_to",
+      "target": "3"
+    },
+    {
+      "source": "1",
+      "type": "administered_to",
+      "target": "4"
+    },
+    {
+      "source": "1",
+      "type": "administered_to",
+      "target": "5"
+    },
+    {
+      "source": "1",
+      "type": "associated_with",
+      "target": "2"
+    },
+    {
+      "source": "2",
+      "type": "indicates",
+      "target": "9"
+    },
+    {
+      "source": "4",
+      "type": "supports",
+      "target": "2"
+    },
+    {
+      "source": "8",
+      "type": "associated_with",
+      "target": "6"
+    },
+    {
+      "source": "2",
+      "type": "increases_risk_of",
+      "target": "10"
+    },
+    {
+      "source": "2",
+      "type": "increases_risk_of",
+      "target": "11"
+    },
+    {
+      "source": "2",
+      "type": "increases_risk_of",
+      "target": "12"
+    },
+    {
+      "source": "2",
+      "type": "increases_risk_of",
+      "target": "13"
+    },
+    {
+      "source": "2",
+      "type": "increases_risk_of",
+      "target": "14"
+    },
+    {
+      "source": "2",
+      "type": "increases_risk_of",
+      "target": "15"
+    },
+    {
+      "source": "2",
+      "type": "increases_risk_of",
+      "target": "16"
+    },
+    {
+      "source": "7",
+      "type": "associated_with",
+      "target": "2"
+    }
+  ],
+  "summary": "The patient, Ava, is experiencing a mild asthma exacerbation treated with an albuterol inhaler and potential azithromycin if bacterial bronchitis develops. Key assumptions include the potential for unmeasured confounders and generalizability issues regarding the treatment's effectiveness across different populations."
+}

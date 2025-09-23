@@ -1,0 +1,17 @@
+{
+  "name": "articula-lab",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "extract": "node scripts/extract.mjs",
+    "serve": "node scripts/server.mjs"
+  },
+  "dependencies": {
+    "openai": "^4.67.0",
+    "ajv": "^8.17.1"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

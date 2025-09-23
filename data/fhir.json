@@ -1,0 +1,112 @@
+{
+  "patient": {
+    "resourceType": "Patient",
+    "id": "pat-001",
+    "identifier": [
+      { "system": "http://hospital.example.org/mrn", "value": "A1234567" }
+    ],
+    "name": [{ "given": ["Ava"], "family": "Nguyen" }],
+    "gender": "female",
+    "birthDate": "1987-03-14"
+  },
+  "problems": [
+    {
+      "resourceType": "Condition",
+      "id": "cond-htn",
+      "code": { "text": "Hypertension", "coding": [{ "system": "http://snomed.info/sct", "code": "38341003" }] },
+      "clinicalStatus": "active",
+      "onsetDateTime": "2018-05-01"
+    },
+    {
+      "resourceType": "Condition",
+      "id": "cond-asthma",
+      "code": { "text": "Asthma", "coding": [{ "system": "http://snomed.info/sct", "code": "195967001" }] },
+      "clinicalStatus": "active",
+      "onsetDateTime": "2009-09-10",
+      "severity": { "text": "mild intermittent" }
+    }
+  ],
+  "allergies": [
+    {
+      "resourceType": "AllergyIntolerance",
+      "id": "alg-pcn",
+      "code": { "text": "Penicillin", "coding": [{ "system": "http://www.nlm.nih.gov/research/umls/rxnorm", "code": "7980" }] },
+      "criticality": "high",
+      "reaction": [{ "manifestation": [{ "text": "anaphylaxis" }] }]
+    }
+  ],
+  "medications": [
+    {
+      "resourceType": "MedicationStatement",
+      "id": "med-lisinopril",
+      "status": "active",
+      "medicationCodeableConcept": { "text": "Lisinopril 10 mg tablet", "coding": [{ "system": "http://www.nlm.nih.gov/research/umls/rxnorm", "code": "29046" }] },
+      "dosageInstruction": [ { "text": "10 mg by mouth once daily" } ]
+    },
+    {
+      "resourceType": "MedicationStatement",
+      "id": "med-albuterol",
+      "status": "active",
+      "medicationCodeableConcept": { "text": "Albuterol HFA inhaler", "coding": [{ "system": "http://www.nlm.nih.gov/research/umls/rxnorm", "code": "435" }] },
+      "dosageInstruction": [ { "text": "2 puffs inhaled every 4–6 hours as needed for wheeze" } ]
+    }
+  ],
+  "observations": [
+    {
+      "resourceType": "Observation",
+      "id": "obs-bp",
+      "code": { "text": "Blood pressure", "coding": [{ "system": "http://loinc.org", "code": "85354-9" }] },
+      "valueString": "128/82 mmHg",
+      "effectiveDateTime": "2025-09-23T09:10:00-05:00"
+    },
+    {
+      "resourceType": "Observation",
+      "id": "obs-spo2",
+      "code": { "text": "SpO2", "coding": [{ "system": "http://loinc.org", "code": "59408-5" }] },
+      "valueQuantity": { "value": 97, "unit": "%" },
+      "effectiveDateTime": "2025-09-23T09:10:00-05:00"
+    },
+    {
+      "resourceType": "Observation",
+      "id": "obs-hr",
+      "code": { "text": "Heart rate", "coding": [{ "system": "http://loinc.org", "code": "8867-4" }] },
+      "valueQuantity": { "value": 78, "unit": "bpm" },
+      "effectiveDateTime": "2025-09-23T09:10:00-05:00"
+    },
+    {
+      "resourceType": "Observation",
+      "id": "obs-a1c",
+      "code": { "text": "Hemoglobin A1c", "coding": [{ "system": "http://loinc.org", "code": "4548-4" }] },
+      "valueQuantity": { "value": 6.2, "unit": "%" },
+      "effectiveDateTime": "2025-08-20T08:30:00-05:00"
+    },
+    {
+      "resourceType": "Observation",
+      "id": "obs-wbc",
+      "code": { "text": "WBC", "coding": [{ "system": "http://loinc.org", "code": "6690-2" }] },
+      "valueQuantity": { "value": 7.1, "unit": "10^3/uL" },
+      "effectiveDateTime": "2025-08-20T08:30:00-05:00"
+    }
+  ],
+  "encounters": [
+    {
+      "resourceType": "Encounter",
+      "id": "enc-001",
+      "class": { "code": "outpatient" },
+      "period": { "start": "2025-09-23T09:00:00-05:00", "end": "2025-09-23T09:25:00-05:00" },
+      "reasonCode": [ { "text": "Cough and wheeze" } ],
+      "participant": [ { "individual": { "display": "Dr. J. Smith, MD" } } ]
+    }
+  ],
+  "formulary": {
+    "nonPreferred": [
+      { "generic": "Amoxicillin", "rxnorm": "723" }
+    ],
+    "preferredAlternatives": [
+      { "generic": "Azithromycin", "rxnorm": "18631" },
+      { "generic": "Doxycycline", "rxnorm": "3640" }
+    ]
+  }
+}
+
+
