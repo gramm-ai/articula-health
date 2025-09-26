@@ -9,7 +9,6 @@ Turn natural-language arguments into a structured **knowledge graph** and render
 ---
 
 ## Features
-- **No client-side keys**: All API calls happen in a GitHub Action using `OPENAI_API_KEY` stored as a **repository secret**.
 - **Interactive graph**: Pan/zoom, select nodes/edges, search, type filters, switchable layouts, PNG/JSON export (Cytoscape.js).
 - **Clinical workflow view**: Left sidebar captures a structured *Session Record* with generated session ID/date, patient context, and ambient transcript; right sidebar summarizes evidence and highlights outstanding **Risk Factors**.
 - **Risk coverage projection**: A second LLM pass replays risk factors against the session transcript to flag those not yet discussed by the clinician.
