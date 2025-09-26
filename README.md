@@ -198,4 +198,4 @@ To re-run, go to **Actions** → *Generate KG JSON* → **Run workflow**.
 ---
 
 ## License
-MIT (add a LICENSE file if you need one)
+MIT 
