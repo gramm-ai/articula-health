@@ -1,7 +1,5 @@
 # articula-health
 
-Turn natural-language arguments into a structured **knowledge graph** and render it on a static site — **without exposing your OPENAI_API_KEY**. The OpenAI call runs in a **GitHub Action** using repository secrets; the action commits `data/kg.json` back to the repo. The site (GitHub Pages) loads that JSON and shows an **interactive graph** (Cytoscape.js).
-
 > **Live data flow:** Text argument → GitHub Action (OpenAI) → `data/kg.json` → Static viewer (`index.html`).
 
 <img width="1389" height="923" alt="image" src="https://github.com/user-attachments/assets/f66ee495-1ae1-498a-b7c0-fbc62ec8905f" />
